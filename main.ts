@@ -25,34 +25,78 @@ function introSequence () {
         `, SpriteKind.Camera)
     tiles.placeOnTile(invisibleCamera, tiles.getTileLocation(25, 9))
     scene.cameraFollowSprite(invisibleCamera)
-story.queueStoryPart(function() {
-    tiles.placeOnTile(corGuy, tiles.getTileLocation(28, 0))
-    corGuy.ay = 300
-    story.printDialog("Hey, I'm CorGuy the Dog, and your a tumbleweed!", 70, 50, 50, 100) 
-})
-
-story.queueStoryPart(function() {
-    tiles.placeOnTile(tumbleWeed, tiles.getTileLocation(25, 0))
-    tumbleWeed.ay = 100
-})
-
-story.queueStoryPart(function() {
-    story.printDialog("Your mission is to play with all of the good pups who live here!", 70, 50, 50, 100)
-    story.spriteMoveToTile(invisibleCamera, tiles.getTileLocation(0, 9), 100)
-})
-
-story.queueStoryPart(function() {
-    story.printDialog("Make sure to give them a good belly rub!", 70, 50, 50, 100)
-  story.spriteMoveToTile(invisibleCamera, tiles.getTileLocation(25, 9), 100)  
-})
-
-story.queueStoryPart(function() {
-    controller.moveSprite(tumbleWeed, 200, 0)
-    scene.cameraFollowSprite(tumbleWeed)
-})
-
+    story.queueStoryPart(function () {
+        tiles.placeOnTile(corGuy, tiles.getTileLocation(28, 0))
+        corGuy.ay = 300
+        story.printDialog("Hey, I'm CorGuy the Dog, and your a tumbleweed!", 70, 50, 50, 100)
+    })
+    story.queueStoryPart(function () {
+        tiles.placeOnTile(tumbleWeed, tiles.getTileLocation(25, 0))
+        tumbleWeed.ay = 500
+    })
+    story.queueStoryPart(function () {
+        story.printDialog("Your mission is to play with all of the good pups who live here!", 70, 50, 50, 100)
+        story.spriteMoveToTile(invisibleCamera, tiles.getTileLocation(0, 9), 100)
+        createDogs()
+    })
+    story.queueStoryPart(function () {
+        story.printDialog("Make sure to give them a good belly rub!", 70, 50, 50, 100)
+        story.spriteMoveToTile(invisibleCamera, tiles.getTileLocation(25, 9), 100)
+    })
+    story.queueStoryPart(function () {
+        controller.moveSprite(tumbleWeed, 200, 0)
+        scene.cameraFollowSprite(tumbleWeed)
+        introFinished = true
+    })
 }
+controller.A.onEvent(ControllerButtonEvent.Pressed, function () {
+    if (tumbleWeed.isHittingTile(CollisionDirection.Bottom)) {
+        tumbleWeed.vy = -200
+    }
+})
+function createDogs () {
+    for (let dog of dogImgs) {
+        newDog = sprites.create(dog, SpriteKind.Dog)
+        tiles.placeOnRandomTile(newDog, assets.tile`tile4`)
+    }
+}
+
+sprites.onOverlap(SpriteKind.Player, SpriteKind.Dog, function(thePlayer: Sprite, theDog: Sprite) {
+    if(!isPlaying && introFinished){
+        isPlaying = true
+        
+        story.queueStoryPart(function() {
+            controller.moveSprite(thePlayer, 0, 0)
+            thePlayer.follow(theDog, 200)
+            story.spriteMoveToTile(theDog, tiles.getTileLocation(randint(0, 24), 11), 200)
+            theDog.startEffect(effects.smiles, 500)
+        })
+
+        story.queueStoryPart(function() {
+            controller.moveSprite(thePlayer, 200, 0)
+            thePlayer.follow(null)
+            isPlaying = false
+            theDog.setKind(SpriteKind.HappyDog)
+        })
+
+    }
+})
+
+game.onUpdate(function() {
+    let happyDogs = sprites.allOfKind(SpriteKind.HappyDog)
+    if(happyDogs.length == dogImgs.length){
+        pause(1000)
+        game.over(true)
+    }
+})
+
+let introFinished = false
+let isPlaying = false
+let newDog: Sprite = null
 let invisibleCamera: Sprite = null
+let tumbleWeed: Sprite = null
+let corGuy: Sprite = null
+let dogImgs: Image[] = []
 let corGuyImg = img`
     .............................fff....
     ..fff......................ff44f....
@@ -107,7 +151,7 @@ let tumbleWeedImg = img`
     . . 5 5 5 4 4 4 4 4 5 5 5 5 5 . 
     `
 tiles.setTilemap(tilemap`level`)
-let dogImgs = [
+dogImgs = [
 img`
     . . . . 1 . . . . 1 . . . . . . 
     . . . . 1 1 . . 1 1 . . . . . . 
@@ -207,14 +251,6 @@ img`
     .d11d1dd11d111d.
     `
 ]
-let corGuy = sprites.create(corGuyImg, SpriteKind.CORGUY)
-let tumbleWeed = sprites.create(tumbleWeedImg, SpriteKind.Player)
-
-controller.A.onEvent(ControllerButtonEvent.Pressed, function() {
-    if (tumbleWeed.isHittingTile(CollisionDirection.Bottom)){
-        tumbleWeed.vy = -200
-    }
-})
-
+corGuy = sprites.create(corGuyImg, SpriteKind.CORGUY)
+tumbleWeed = sprites.create(tumbleWeedImg, SpriteKind.Player)
 introSequence()
-  
